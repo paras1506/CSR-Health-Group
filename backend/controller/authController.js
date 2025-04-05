@@ -75,34 +75,39 @@ exports.signup = async (req, res) => {
       role,
     });
 
-    // console.log("User before save:", user);
-    await user.save();
+    console.log("User before save:", user);
+    // await user.save();
 
     await sendEmail(
       email,
       `
-          <h2>Welcome to <span style="color:#27ae60;">Vardaan</span>, ${fname}!</h2>
-  
-          <p>Thank you for joining <strong>Vardaan</strong>, the official Corporate Social Responsibility (CSR) initiative by <strong>Zilha Parishad Sangli</strong>.</p>
-  
-          <p>This platform bridges the gap between the needs of educational and welfare institutions across Sangli District and individuals or organizations willing to contribute towards their growth.</p>
-  
-          <p>Your account has been created successfully, and you can now explore opportunities to <strong>donate items</strong> based on specific requirements listed by verified institutions.</p>
-  
-          ${
-            role !== "Donor"
-              ? `<p>As a <strong>${role}</strong>, your account is currently under review. Our team will verify your information shortly, and you will be notified once the process is complete.</p>`
-              : `<p>You can now browse listed needs from schools and other institutes, and make meaningful contributions with ease.</p>`
-          }
-  
-          <hr/>
-  
-          <p style="color:#555;">If you have any questions or need assistance, feel free to contact us at <a href="mailto:support@zpsngvardaan.in">support@zpsngvardaan.in</a>.</p>
-  
-          <p style="margin-top:30px;">Warm regards,<br/>
-          <strong>Team Vardaan<br/>Zilha Parishad, Sangli</strong></p>
-        `,
-      "Welcome to Vardaan - A CSR Initiative by Zilha Parishad, Sangli"
+        <div style="text-align:center;">
+          <img src="https://zpsangli.com/mr/img/Sangli_ZP.jpg" alt="Zilha Parishad Sangli" style="max-width:200px; margin-bottom: 20px;" />
+        </div>
+    
+        <h2 style="text-align:center;">Welcome to <span style="color:#27ae60;">Vardaan</span>, ${fname}!</h2>
+        <p style="text-align:center; color:#888; font-style:italic; margin-top:-10px;">Rural Development through Aid and Assistance Network</p>
+    
+        <p>Thank you for joining <strong>Vardaan</strong>, the official Corporate Social Responsibility (CSR) initiative by <strong>Zilha Parishad Sangli</strong>.</p>
+    
+        <p>This platform bridges the gap between the needs of educational and welfare institutions across Sangli District and individuals or organizations willing to contribute towards their growth.</p>
+    
+        <p>Your account has been created successfully, and you can now explore opportunities to <strong>donate items</strong> based on specific requirements listed by verified institutions.</p>
+    
+        ${
+          role !== "Donor"
+            ? `<p>As a <strong>${role}</strong>, your account is currently under review. Our team will verify your information shortly, and you will be notified once the process is complete.</p>`
+            : `<p>You can now browse listed needs from schools, hostels, and other institutes, and make meaningful contributions with ease.</p>`
+        }
+    
+        <hr/>
+    
+        <p style="color:#555;">If you have any questions or need assistance, feel free to contact us at <a href="mailto:support@zpsngvardaan.in">support@zpsngvardaan.in</a>.</p>
+    
+        <p style="margin-top:30px;">Warm regards,<br/>
+        <strong>Team Vardaan<br/>Zilha Parishad Sangli</strong></p>
+      `,
+      "Welcome to Vardaan - A CSR Initiative by Zilha Parishad Sangli"
     );
 
     if (role !== "Donor") {
