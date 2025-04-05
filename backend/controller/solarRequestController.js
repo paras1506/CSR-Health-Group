@@ -1,4 +1,5 @@
 const SolarRequest = require("../model/solarRequest");
+const { sendMail } = require("../utils/verifyAndSendMail");
 const {
   authenticate,
   authorizeRoles,
@@ -165,6 +166,32 @@ exports.donorInterest = async (req, res) => {
         },
       },
     });
+
+    await sendMail(
+      req.user.email,
+      "Interest Registered - Vardaan CSR Portal",
+      `
+        <div style="text-align:center;">
+          <img src="https://zpsangli.com/mr/img/Sangli_ZP.jpg" alt="Zilha Parishad Sangli" style="max-width:200px; margin-bottom: 20px;" />
+        </div>
+    
+        <h2 style="text-align:center;">Thank You for Showing Interest, ${req.user.fname}!</h2>
+        <p style="text-align:center; color:#888; font-style:italic; margin-top:-10px;">Rural Development through Aid and Assistance Network</p>
+    
+        <p>We appreciate your willingness to support a noble cause through <strong>Vardaan</strong>, the official Corporate Social Responsibility (CSR) platform by <strong>Zilha Parishad Sangli</strong>.</p>
+    
+        <p>You have shown interest in the solar requirement raised by <strong>${request.organisationName}</strong>. Your engagement is a vital step towards empowering rural institutions and making a tangible difference.</p>
+    
+        <p>Our team and the institute will reach out to you soon with further details and next steps.</p>
+    
+        <hr/>
+    
+        <p style="color:#555;">If you have any questions or need help, feel free to reach us at <a href="mailto:support@zpsngvardaan.in">support@zpsngvardaan.in</a>.</p>
+    
+        <p style="margin-top:30px;">Warm regards,<br/>
+        <strong>Team Vardaan<br/>Zilha Parishad Sangli</strong></p>
+      `
+    );
 
     res.json({ message: "Interest recorded successfully." });
   } catch (error) {
