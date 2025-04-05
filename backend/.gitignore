@@ -8,6 +8,12 @@
 # testing
 /coverage
 
+
+data.json
+dataToJson.py
+sample_data_push.js
+zpData.csv
+
 # production
 /build
 
