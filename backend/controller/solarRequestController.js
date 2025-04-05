@@ -32,12 +32,52 @@ exports.createRequest = async (req, res) => {
 // ✅ Get All Solar Requests (Public/Home Page)
 exports.getAllRequests = async (req, res) => {
     try {
-        const requests = await SolarRequest.find().select("-donors");
-        res.json(requests);
+      const { page = 1, limit = 15 } = req.query;
+  
+      const options = {
+        page: parseInt(page) || 1,
+        limit: parseInt(limit) || 15,
+        sort: { createdAt: -1 },
+      };
+  
+      // Basic aggregation pipeline (no joins here)
+      const aggregate = SolarRequest.aggregate([
+        {
+          $project: {
+            organisationName: 1,
+            institutionType: 1,
+            villageName: 1,
+            taluka: 1,
+            solarDemand: 1,
+            fulfillmentPercentage: 1,
+            createdAt: 1,
+          },
+        },
+      ]);
+  
+      const paginatedResult = await SolarRequest.aggregatePaginate(aggregate, options);
+  
+      console.log(paginatedResult);
+
+      return res.json({
+        pagination: {
+          totalItems: paginatedResult.totalDocs,
+          totalPages: paginatedResult.totalPages,
+          currentPage: paginatedResult.page,
+          hasNextPage: paginatedResult.hasNextPage,
+          hasPrevPage: paginatedResult.hasPrevPage,
+          nextPage: paginatedResult.nextPage,
+          prevPage: paginatedResult.prevPage,
+        },
+        requests: paginatedResult.docs,
+      });
+  
     } catch (error) {
-        res.status(500).json({ error: "Failed to fetch requests" });
+      console.error(error);
+      res.status(500).json({ error: "Failed to fetch requests", details: error.message });
     }
-};
+  };
+  
 
 // ✅ Search by Village Name (Public)
 exports.searchByVillage = async (req, res) => {

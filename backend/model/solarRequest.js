@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 const SolarRequestSchema = new mongoose.Schema({
     organisationName: { type: String, required: true },
@@ -21,5 +22,7 @@ const SolarRequestSchema = new mongoose.Schema({
         }
     ]
 }, { timestamps: true });
+
+SolarRequestSchema.plugin(aggregatePaginate);
 
 module.exports = mongoose.model("SolarRequest", SolarRequestSchema);
