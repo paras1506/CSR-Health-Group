@@ -3,7 +3,7 @@ import axios from "axios";
 import SolarCard from "../components/SolarCard";
 import { useNavigate } from "react-router-dom";
 
-const HomePage = () => {
+const Demands = () => {
   const [solarRequests, setSolarRequests] = useState([]);
   const [searchVillage, setSearchVillage] = useState("");
   const [villageSuggestions, setVillageSuggestions] = useState([]);
@@ -55,6 +55,11 @@ const HomePage = () => {
   useEffect(() => {
     fetchAllRequests();
   }, []);
+
+  // Effect to apply filters on selectedTaluka or selectedDept change
+  useEffect(() => {
+    applyFilters();
+  }, [selectedTaluka, selectedDept]);
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
@@ -118,8 +123,8 @@ const HomePage = () => {
       {/* Display Solar Requests */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {solarRequests.length > 0 ? (
-          solarRequests.map((request, index) => (
-            <SolarCard key={index} request={request} /> // ✅ Correct prop name
+          solarRequests.map((request) => (
+            <SolarCard key={request._id} request={request} />
           ))
         ) : (
           <p>No solar requests found.</p>
@@ -129,4 +134,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default Demands;

@@ -4,13 +4,16 @@ const { authenticate, authorizeRoles } = require("../middleware/authMiddleware")
 // ✅ Create Solar Request (Appealer)
 exports.createRequest = async (req, res) => {
     try {
+
+        console.log(req.user);
+        
         if (!req.user.isVerified) {
             return res.status(403).json({ error: "User not verified." });
         }
 
-        const { organisationName, institutionType, villageName, taluka, solarDemand, capacity } = req.body;
+        const { organisationName, institutionType, villageName, taluka, solarDemand, district} = req.body;
         
-        if (!organisationName || !institutionType || !villageName || !taluka || !solarDemand || !capacity) {
+        if (!organisationName || !institutionType || !villageName || !taluka || !solarDemand || !district) {
             return res.status(400).json({ error: "All fields are required." });
         }
 
@@ -149,3 +152,8 @@ exports.verifyAppealer = async (req, res) => {
         res.status(500).json({ error: "Verification failed", details: error.message });
     }
 };
+
+
+
+
+

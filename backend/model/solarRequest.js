@@ -5,10 +5,10 @@ const SolarRequestSchema = new mongoose.Schema({
     institutionType: { type: String, required: true },
     villageName: { type: String, required: true },
     taluka: { type: String, required: true },
-    solarDemand: { type: Number, required: true },
-    capacity: { type: Number, required: true },
-    departmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Department", required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    solarDemand: { type: String, required: true },
+    district: { type: String, required: true },
+    departmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     fulfillmentPercentage: { type: Number, default: 0 },
     donors: [
         {

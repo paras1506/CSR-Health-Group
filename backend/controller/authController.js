@@ -63,7 +63,7 @@ exports.login = async (req, res) => {
             { expiresIn: "2d" }
         );
 
-        res.json({ token, user });
+        res.json({ success: true, token, user });
     } catch (error) {
         res.status(500).json({ error: "Login failed", details: error.message });
     }
