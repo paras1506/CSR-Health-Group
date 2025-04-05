@@ -21,12 +21,19 @@ const Home = () => {
 
   const navigate = useNavigate();
 
-  const fetchRequests = async (page = 1, taluka = "", dept = "") => {
+  // ✅ Updated to include `village` parameter
+  const fetchRequests = async (
+    page = 1,
+    taluka = "",
+    dept = "",
+    village = ""
+  ) => {
     try {
       let url = `http://localhost:4000/api/v1/solar/all?page=${page}`;
       const params = [];
       if (taluka) params.push(`taluka=${taluka}`);
       if (dept) params.push(`institutionType=${dept}`);
+      if (village) params.push(`village=${village}`);
       if (params.length > 0) url += `&${params.join("&")}`;
 
       const res = await axios.get(url);
@@ -34,7 +41,6 @@ const Home = () => {
       setSolarRequests(res.data.requests || []);
       setPagination(res.data.pagination || {});
 
-      // Set options only on first page load
       if (page === 1) {
         setTalukaOptions(
           (res.data.distinctTalukas || [])
@@ -55,8 +61,9 @@ const Home = () => {
     if (query.length >= 2) {
       try {
         const res = await axios.get(
-          `http://localhost:4000/api/v1/solar/search?village=${query}`
+          `http://localhost:4000/api/v1/solar/search-villages?query=${query}`
         );
+        console.log("Village suggestions:", res.data);
         setVillageSuggestions(res.data || []);
       } catch (err) {
         console.error("Search error:", err);
@@ -67,11 +74,11 @@ const Home = () => {
   };
 
   const applyFilters = () => {
-    fetchRequests(1, selectedTaluka, selectedDept);
+    fetchRequests(1, selectedTaluka, selectedDept, searchVillage);
   };
 
   const goToPage = (page) => {
-    fetchRequests(page, selectedTaluka, selectedDept);
+    fetchRequests(page, selectedTaluka, selectedDept, searchVillage);
   };
 
   useEffect(() => {
@@ -85,7 +92,7 @@ const Home = () => {
       {/* Search and Filter Section */}
       <div className="flex flex-wrap gap-4 mb-4">
         {/* Village Search */}
-        <div>
+        <div className="relative">
           <input
             type="text"
             value={searchVillage}
@@ -94,7 +101,7 @@ const Home = () => {
             className="border px-2 py-1 rounded bg-white/40 backdrop-blur-md shadow-lg rounded-lg border-white/50"
           />
           {villageSuggestions.length > 0 && (
-            <ul className="bg-white border mt-1 rounded shadow max-h-40 overflow-y-auto">
+            <ul className="absolute z-10 w-full bg-white border mt-1 rounded shadow max-h-40 overflow-y-auto">
               {villageSuggestions.map((v, index) => (
                 <li
                   key={index}
@@ -102,6 +109,7 @@ const Home = () => {
                   onClick={() => {
                     setSearchVillage(v);
                     setVillageSuggestions([]);
+                    fetchRequests(1, selectedTaluka, selectedDept, v);
                   }}
                 >
                   {v}
