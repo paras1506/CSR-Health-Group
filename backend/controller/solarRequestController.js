@@ -51,7 +51,13 @@ exports.createRequest = async (req, res) => {
 // ✅ Get All Solar Requests (Public/Home Page)
 exports.getAllRequests = async (req, res) => {
   try {
-    const { page = 1, limit = 15, taluka, institutionType } = req.query;
+    const {
+      page = 1,
+      limit = 15,
+      taluka,
+      institutionType,
+      village,
+    } = req.query;
 
     const options = {
       page: parseInt(page) || 1,
@@ -59,12 +65,11 @@ exports.getAllRequests = async (req, res) => {
       sort: { createdAt: -1 },
     };
 
-    // Build filter object dynamically
     const filters = {};
     if (taluka) filters.taluka = taluka;
     if (institutionType) filters.institutionType = institutionType;
+    if (village) filters.villageName = { $regex: village, $options: "i" };
 
-    // Aggregation pipeline with optional filters
     const aggregatePipeline = [];
 
     if (Object.keys(filters).length > 0) {
@@ -116,18 +121,36 @@ exports.getAllRequests = async (req, res) => {
 };
 
 // ✅ Search by Village Name (Public)
-exports.searchByVillage = async (req, res) => {
+exports.searchVillages = async (req, res) => {
   try {
-    const { village } = req.query;
-    if (!village)
-      return res.status(400).json({ error: "Village name is required." });
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ error: "Search query is required." });
+    }
 
-    const results = await SolarRequest.find({
-      villageName: new RegExp(village, "i"),
-    }).select("-donors");
-    res.json(results);
+    const villages = await SolarRequest.aggregate([
+      {
+        $match: {
+          villageName: { $regex: query, $options: "i" },
+        },
+      },
+      {
+        $group: {
+          _id: "$villageName",
+        },
+      },
+      {
+        $limit: 10,
+      },
+    ]);
+
+    const villageNames = villages.map((v) => v._id);
+
+    res.json(villageNames);
   } catch (error) {
-    res.status(500).json({ error: "Search failed", details: error.message });
+    res
+      .status(500)
+      .json({ error: "Failed to search villages", details: error.message });
   }
 };
 

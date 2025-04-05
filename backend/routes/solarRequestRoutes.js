@@ -1,12 +1,12 @@
 const express = require("express");
-const { createRequest, getAllRequests, searchByVillage, filterByDepartment, donorInterest, updateFulfillment, getInterestedDonors } = require("../controller/solarRequestController");
+const { createRequest, getAllRequests, searchVillages, filterByDepartment, donorInterest, updateFulfillment, getInterestedDonors } = require("../controller/solarRequestController");
 const { authenticate, authorizeRoles } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 router.post("/create", authenticate, authorizeRoles("Appealer"), createRequest);
 router.get("/all", getAllRequests);
-router.get("/search", searchByVillage);
+router.get("/search-villages", searchVillages);
 router.get("/filter", filterByDepartment);
 router.post("/donor-interest", authenticate, authorizeRoles("Donor"), donorInterest);
 router.post("/update-fulfillment", authenticate, authorizeRoles("DepartmentHead"), updateFulfillment);
