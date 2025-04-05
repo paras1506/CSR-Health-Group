@@ -7,7 +7,7 @@ const { verifyEmail, sendEmail } = require("../utils/verifyAndSendMail");
 // User Signup
 exports.signup = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
+    // console.log("Request body:", req.body);
     const {
       fname,
       lname,
@@ -75,8 +75,8 @@ exports.signup = async (req, res) => {
       role,
     });
 
-    console.log("User before save:", user);
-    // await user.save();
+    // console.log("User before save:", user);
+    await user.save();
 
     await sendEmail(
       email,
