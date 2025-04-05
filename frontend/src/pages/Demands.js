@@ -3,33 +3,61 @@ import axios from "axios";
 import SolarCard from "../components/SolarCard";
 import { useNavigate } from "react-router-dom";
 
-const Demands = () => {
+const Home = () => {
   const [solarRequests, setSolarRequests] = useState([]);
   const [searchVillage, setSearchVillage] = useState("");
   const [villageSuggestions, setVillageSuggestions] = useState([]);
   const [selectedTaluka, setSelectedTaluka] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
+  const [talukaOptions, setTalukaOptions] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
+
   const navigate = useNavigate();
 
-  // Fetch all solar requests
-  const fetchAllRequests = async () => {
+  const fetchRequests = async (page = 1, taluka = "", dept = "") => {
     try {
-      const res = await axios.get("http://localhost:4000/api/v1/solar/all");
-      setSolarRequests(res.data);
+      let url = `http://localhost:4000/api/v1/solar/all?page=${page}`;
+      const params = [];
+      if (taluka) params.push(`taluka=${taluka}`);
+      if (dept) params.push(`institutionType=${dept}`);
+      if (params.length > 0) url += `&${params.join("&")}`;
+
+      const res = await axios.get(url);
+
+      setSolarRequests(res.data.requests || []);
+      setPagination(res.data.pagination || {});
+
+      // Set options only on first page load
+      if (page === 1) {
+        setTalukaOptions(
+          (res.data.distinctTalukas || [])
+            .filter((t) => t && t !== "????")
+            .map((t) => t.trim())
+        );
+        setDepartmentOptions(res.data.distinctDepartments || []);
+      }
     } catch (err) {
       console.error("Failed to fetch solar requests:", err);
     }
   };
 
-  // Handle search input change
   const handleSearchChange = async (e) => {
     const query = e.target.value;
     setSearchVillage(query);
 
     if (query.length >= 2) {
       try {
-        const res = await axios.get(`http://localhost:4000/api/v1/solar/search?village=${query}`);
-        setVillageSuggestions(res.data);
+        const res = await axios.get(
+          `http://localhost:4000/api/v1/solar/search?village=${query}`
+        );
+        setVillageSuggestions(res.data || []);
       } catch (err) {
         console.error("Search error:", err);
       }
@@ -38,100 +66,123 @@ const Demands = () => {
     }
   };
 
-  // Apply filters based on selected taluka and department
-  const applyFilters = async () => {
-    let url = "http://localhost:4000/api/v1/solar/filter?";
-    if (selectedTaluka) url += `taluka=${selectedTaluka}&`;
-    if (selectedDept) url += `department=${selectedDept}&`;
+  const applyFilters = () => {
+    fetchRequests(1, selectedTaluka, selectedDept);
+  };
 
-    try {
-      const res = await axios.get(url);
-      setSolarRequests(res.data);
-    } catch (err) {
-      console.error("Filter error:", err);
-    }
+  const goToPage = (page) => {
+    fetchRequests(page, selectedTaluka, selectedDept);
   };
 
   useEffect(() => {
-    fetchAllRequests();
+    fetchRequests(1);
   }, []);
-
-  // Effect to apply filters on selectedTaluka or selectedDept change
-  useEffect(() => {
-    applyFilters();
-  }, [selectedTaluka, selectedDept]);
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-4">Solar Requests</h1>
 
       {/* Search and Filter Section */}
-      <div className="flex gap-4 mb-4">
-        {/* Search by Village */}
-        <div className="flex flex-col">
+      <div className="flex flex-wrap gap-4 mb-4">
+        {/* Village Search */}
+        <div>
           <input
             type="text"
             value={searchVillage}
             onChange={handleSearchChange}
-            placeholder="Search by village"
-            className="p-2 border rounded"
+            placeholder="Search village..."
+            className="border px-2 py-1 rounded bg-white/40 backdrop-blur-md shadow-lg rounded-lg border-white/50"
           />
           {villageSuggestions.length > 0 && (
-            <ul className="bg-white border mt-1 rounded shadow p-2">
-              {villageSuggestions.map((village, idx) => (
+            <ul className="bg-white border mt-1 rounded shadow max-h-40 overflow-y-auto">
+              {villageSuggestions.map((v, index) => (
                 <li
-                  key={idx}
+                  key={index}
+                  className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
-                    setSearchVillage(village);
+                    setSearchVillage(v);
                     setVillageSuggestions([]);
                   }}
-                  className="cursor-pointer hover:bg-gray-100 px-2 py-1"
                 >
-                  {village}
+                  {v}
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        {/* Filter by Taluka */}
+        {/* Taluka Dropdown */}
         <select
+          value={selectedTaluka}
           onChange={(e) => setSelectedTaluka(e.target.value)}
-          className="p-2 border rounded"
+          className="border px-2 py-1 rounded bg-white/20 backdrop-blur-md shadow-lg rounded-lg border-white/50"
         >
-          <option value="">Filter by Taluka</option>
-          <option value="Taluka1">Taluka1</option>
-          <option value="Taluka2">Taluka2</option>
+          <option value="">All Talukas</option>
+          {talukaOptions.map((taluka, index) => (
+            <option key={index} value={taluka}>
+              {taluka}
+            </option>
+          ))}
         </select>
 
-        {/* Filter by Department */}
+        {/* Department Dropdown */}
         <select
+          value={selectedDept}
           onChange={(e) => setSelectedDept(e.target.value)}
-          className="p-2 border rounded"
+          className="border px-2 py-1 rounded bg-white/20 backdrop-blur-md shadow-lg rounded-lg border-white/50"
         >
-          <option value="">Filter by Department</option>
-          <option value="Education">Education</option>
-          <option value="Health">Health</option>
+          <option value="">All Departments</option>
+          {departmentOptions.map((dept, index) => (
+            <option key={index} value={dept}>
+              {dept}
+            </option>
+          ))}
         </select>
 
         {/* Apply Filters Button */}
-        <button onClick={applyFilters} className="px-4 py-2 bg-blue-600 text-white rounded">
+        <button
+          onClick={applyFilters}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
           Apply Filters
         </button>
       </div>
 
-      {/* Display Solar Requests */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {solarRequests.length > 0 ? (
-          solarRequests.map((request) => (
-            <SolarCard key={request._id} request={request} />
-          ))
-        ) : (
-          <p>No solar requests found.</p>
+      {/* Solar Request Cards */}
+      {solarRequests.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {solarRequests.map((req) => (
+            <SolarCard key={req._id} request={req} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-white">No requests found.</p>
+      )}
+
+      {/* Pagination Controls */}
+      <div className="flex justify-center text-white mt-6 gap-2">
+        {pagination.hasPrevPage && (
+          <button
+            onClick={() => goToPage(pagination.currentPage - 1)}
+            className="px-3 py-1 border rounded"
+          >
+            Prev
+          </button>
+        )}
+        <span className="px-3 py-1 border rounded text-black bg-white">
+          Page {pagination.currentPage} of {pagination.totalPages}
+        </span>
+        {pagination.hasNextPage && (
+          <button
+            onClick={() => goToPage(pagination.currentPage + 1)}
+            className="px-3 py-1 border rounded"
+          >
+            Next
+          </button>
         )}
       </div>
     </div>
   );
 };
 
-export default Demands;
+export default Home;
