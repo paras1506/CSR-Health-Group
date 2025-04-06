@@ -1,185 +1,293 @@
-import React, { useState } from 'react'
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import {toast} from "react-hot-toast"
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
+const SignupForm = ({ setIsLoggedIn }) => {
+  const navigate = useNavigate();
 
-const SignupForm = ({setIsLoggedIn}) => {
-    const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    fname: "",
+    lname: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    panNumber: "",
+    GSTNumber: "",
+  });
 
-    const [formData, setFormData] = useState({
-        firstName:"",
-        lastName:"",
-        email:"",
-        password:"",
-        confirmPassword:""
-    })
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [role, setRole] = useState("Appealer");
+  const [donorType, setDonorType] = useState("");
 
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [accountType, setAccountType] = useState("student");
+  const changeHandler = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    function changeHandler(event) {
+  const submitHandler = async (e) => {
+    e.preventDefault();
 
-        setFormData( (prevData) =>(
-            {
-                ...prevData,
-                [event.target.name]:event.target.value
-            }
-        ) )
-
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
     }
 
-    function submitHandler(event) {
-        event.preventDefault();
-        if(formData.password != formData.confirmPassword) {
-            toast.error("Passwords do not match");
-            return ;
-        }
+    if (role === "Donor") {
+      if (!donorType) {
+        toast.error("Please select Donor Type");
+        return;
+      }
 
+      if (donorType === "person" && !formData.panNumber.trim()) {
+        toast.error("PAN Number is required for Donor - Person");
+        return;
+      }
+
+      if (donorType === "organization") {
+        if (!formData.panNumber.trim() || !formData.GSTNumber.trim()) {
+          toast.error(
+            "PAN and GST Number are required for Donor - Organization"
+          );
+          return;
+        }
+      }
+    }
+
+    const finalData = {
+      fname: formData.fname,
+      lname: formData.lname,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+      role,
+      ...(role === "Donor" && {
+        donorType,
+        panNumber: formData.panNumber,
+        ...(donorType === "organization" && {
+          GSTNumber: formData.GSTNumber,
+        }),
+      }),
+    };
+
+    try {
+      const response = await fetch("http://localhost:4000/api/v1/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(finalData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Account Created Successfully");
         setIsLoggedIn(true);
-        toast.success("Account Created");
-        const accountData = {
-            ...formData
-        };
-
-        const finalData = {
-            ...accountData,
-            accountType
-        }
-
-        console.log("printing Final account data ");
-        console.log(finalData);
-
-        navigate("/dashboard");
-
+        navigate("/demands");
+      } else {
+        toast.error(data.message || "Signup failed");
+      }
+    } catch (error) {
+      toast.error("Something went wrong");
+      console.error("Signup error:", error);
     }
-
+  };
 
   return (
     <div>
-        {/* student-Instructor tab */}
-        <div
-        className='flex bg-richblack-800 p-1 gap-x-1 my-6 rounded-full max-w-max'>
+      {/* User Role Tabs */}
+      <div className="flex bg-richblack-800 p-1 gap-x-1 my-6 rounded-full max-w-max">
+        <button
+          className={`$
+            {role === "Appealer"
+              ? "bg-richblack-900 text-richblack-5"
+              : "bg-transparent text-richblack-200"}
+            py-2 px-5 rounded-full`}
+          onClick={() => {
+            setRole("Appealer");
+            setDonorType("");
+          }}
+        >
+          Appealer
+        </button>
+        <button
+          className={`$
+            {role === "Donor"
+              ? "bg-richblack-900 text-richblack-5"
+              : "bg-transparent text-richblack-200"}
+            py-2 px-5 rounded-full`}
+          onClick={() => setRole("Donor")}
+        >
+          Donor
+        </button>
+      </div>
 
-            <button
-            className={`${accountType === "student" 
-            ?
-              "bg-richblack-900 text-richblack-5"
-            :"bg-transparent text-richblack-200"} py-2 px-5 rounded-full transition-all duration-200`}
-            onClick={()=> setAccountType("student")}>
-                Student
-            </button>
+      {/* Donor Type */}
+      {role === "Donor" && (
+        <div className="flex gap-4 mb-4 ml-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              value="person"
+              checked={donorType === "person"}
+              onChange={() => setDonorType("person")}
+            />
+            <span className="text-richblack-200">Person</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              value="organization"
+              checked={donorType === "organization"}
+              onChange={() => setDonorType("organization")}
+            />
+            <span className="text-richblack-200">Organization</span>
+          </label>
+        </div>
+      )}
 
-            <button
-            className={`${accountType === "instructor" 
-            ?
-              "bg-richblack-900 text-richblack-5"
-            :"bg-transparent text-richblack-200"} py-2 px-5 rounded-full transition-all duration-200`}
-            onClick={() => setAccountType("instructor")}>
-                Instructor
-            </button>
+      {/* Signup Form */}
+      <form onSubmit={submitHandler}>
+        <div className="flex gap-4">
+          <label className="w-full">
+            <p className="text-richblack-5 mb-1">First Name</p>
+            <input
+              required
+              type="text"
+              name="fname"
+              value={formData.fname}
+              onChange={changeHandler}
+              className="w-full p-2 rounded bg-richblack-700 text-richblack-5"
+              placeholder="Enter first name"
+            />
+          </label>
+
+          <label className="w-full">
+            <p className="text-richblack-5 mb-1">Last Name</p>
+            <input
+              required
+              type="text"
+              name="lname"
+              value={formData.lname}
+              onChange={changeHandler}
+              className="w-full p-2 rounded bg-richblack-700 text-richblack-5"
+              placeholder="Enter last name"
+            />
+          </label>
         </div>
 
-        <form onSubmit={submitHandler} >
-        {/* first name and lastName */}
-            <div className='flex gap-x-4 mt-[20px]'>
-                    <label className='w-full'>
-                        <p className='text-[0.875rem] text-richblack-5 mb-1 leading-[1.375rem]'>First Name<sup className='text-pink-200'>*</sup></p>
-                        <input
-                            required
-                            type="text"
-                            name="firstName"
-                            onChange={changeHandler}
-                            placeholder="Enter First Name"
-                            value={formData.firstName}
-                            className='bg-richblack-800 rounded-[0.5rem] text-richblack-5 w-full p-[12px]'
-                        />
-                    </label>
+        <label className="block mt-4">
+          <p className="text-richblack-5 mb-1">Email Address</p>
+          <input
+            required
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={changeHandler}
+            className="w-full p-2 rounded bg-richblack-700 text-richblack-5"
+            placeholder="Enter email"
+          />
+        </label>
 
-                    <label className='w-full'>
-                        <p className='text-[0.875rem] text-richblack-5 mb-1 leading-[1.375rem]'>Last Name<sup className='text-pink-200'>*</sup></p>
-                        <input
-                            required
-                            type="text"
-                            name="lastName"
-                            onChange={changeHandler}
-                            placeholder="Enter Last Name"
-                            value={formData.lastName}
-                            className='bg-richblack-800 rounded-[0.5rem] text-richblack-5 w-full p-[12px]'
-                        />
-                    </label>
-            </div>
-            {/* email Add */}
-            <div className='mt-[20px]'>
-            <label className='w-full mt-[20px]'>
-                    <p className='text-[0.875rem] text-richblack-5 mb-1 leading-[1.375rem]'>Email Address<sup className='text-pink-200'>*</sup></p>
-                    <input
-                        required
-                        type="email"
-                        name="email"
-                        onChange={changeHandler}
-                        placeholder="Enter Email Address "
-                        value={formData.email}
-                        className='bg-richblack-800 rounded-[0.5rem] text-richblack-5 w-full p-[12px]'
-                    />
+        <label className="block mt-4">
+          <p className="text-richblack-5 mb-1">Phone Number</p>
+          <input
+            required
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={changeHandler}
+            className="w-full p-2 rounded bg-richblack-700 text-richblack-5"
+            placeholder="Enter phone number"
+          />
+        </label>
+
+        {/* Donor Fields */}
+        {role === "Donor" && (
+          <>
+            <label className="block mt-4">
+              <p className="text-richblack-5 mb-1">PAN Number</p>
+              <input
+                required={
+                  donorType === "person" || donorType === "organization"
+                }
+                type="text"
+                name="panNumber"
+                value={formData.panNumber}
+                onChange={changeHandler}
+                className="w-full p-2 rounded bg-richblack-700 text-richblack-5"
+                placeholder="Enter PAN number"
+              />
             </label>
-            </div>
-            
 
-            {/* createPassword and Confirm Password */}
-            <div className='w-full flex gap-x-4 mt-[20px]'>
-                <label className='w-full relative'>
-                    <p className='text-[0.875rem] text-richblack-5 mb-1 leading-[1.375rem]'>Create Password<sup className='text-pink-200'>*</sup></p>
-                    <input
-                        required
-                        type= {showPassword ? ("text") : ("password")}
-                        name="password"
-                        onChange={changeHandler}
-                        placeholder="Enter Password"
-                        value={formData.password}
-                        className='bg-richblack-800 rounded-[0.5rem] text-richblack-5 w-full p-[12px]'
-                    />
-                    <span
-                     className='absolute right-3 top-[38px] cursor-pointer' 
-                    onClick={() => setShowPassword((prev) => !prev)}>
-                        {showPassword ? 
+            {donorType === "organization" && (
+              <label className="block mt-4">
+                <p className="text-richblack-5 mb-1">GST Number</p>
+                <input
+                  required
+                  type="text"
+                  name="GSTNumber"
+                  value={formData.GSTNumber}
+                  onChange={changeHandler}
+                  className="w-full p-2 rounded bg-richblack-700 text-richblack-5"
+                  placeholder="Enter GST number"
+                />
+              </label>
+            )}
+          </>
+        )}
 
-                        (<AiOutlineEyeInvisible fontSize={24} fill='#AFB2BF'/>) : 
+        <div className="flex gap-4 mt-4">
+          <label className="w-full relative">
+            <p className="text-richblack-5 mb-1">Password</p>
+            <input
+              required
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={changeHandler}
+              className="w-full p-2 rounded bg-richblack-700 text-richblack-5"
+              placeholder="Enter password"
+            />
+            <span
+              className="absolute right-3 top-9 cursor-pointer text-richblack-200 text-sm"
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </span>
+          </label>
 
-                        (<AiOutlineEye fontSize={24} fill='#AFB2BF'/>)}
-                    </span>
-                </label>
+          <label className="w-full relative">
+            <p className="text-richblack-5 mb-1">Confirm Password</p>
+            <input
+              required
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={changeHandler}
+              className="w-full p-2 rounded bg-richblack-700 text-richblack-5"
+              placeholder="Confirm password"
+            />
+            <span
+              className="absolute right-3 top-9 cursor-pointer text-richblack-200 text-sm"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+            >
+              {showConfirmPassword ? "Hide" : "Show"}
+            </span>
+          </label>
+        </div>
 
-                <label className='w-full relative'>
-                    <p className='text-[0.875rem] text-richblack-5 mb-1 leading-[1.375rem]'>Confirm Password<sup className='text-pink-200'>*</sup></p>
-                    <input
-                        required
-                        type= {showConfirmPassword ? ("text") : ("password")}
-                        name="confirmPassword"
-                        onChange={changeHandler}
-                        placeholder="Confirm Password"
-                        value={formData.confirmPassword}
-                        className='bg-richblack-800 rounded-[0.5rem] text-richblack-5 w-full p-[12px]'
-                    />
-                    <span 
-                     className='absolute right-3 top-[38px] cursor-pointer'
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}>
-                        {showConfirmPassword ?
-
-                         (<AiOutlineEyeInvisible fontSize={24} fill='#AFB2BF'/>) : 
-
-                         (<AiOutlineEye fontSize={24} fill='#AFB2BF'/>)}
-                    </span>
-                </label>
-            </div>
-        <button className=' w-full bg-yellow-50 rounded-[8px] font-medium text-richblack-900 px-[12px] py-[8px] mt-6'>
-            Create Account
+        <button
+          type="submit"
+          className="w-full bg-yellow-50 rounded-md font-medium text-richblack-900 px-4 py-2 mt-6"
+        >
+          Create Account
         </button>
-        </form>
-
+      </form>
     </div>
-  )
-}
+  );
+};
 
-export default SignupForm
+export default SignupForm;

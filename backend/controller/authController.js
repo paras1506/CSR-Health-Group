@@ -27,7 +27,7 @@ exports.signup = async (req, res) => {
     }
 
     if (role === "Donor") {
-      if (!donorType || !["Person", "Organization"].includes(donorType)) {
+      if (!donorType || !["person", "organization"].includes(donorType)) {
         return res
           .status(400)
           .json({ error: "Invalid or missing donor type." });
@@ -63,6 +63,8 @@ exports.signup = async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
+    console.log("Password hash:", passwordHash);
 
     const user = new User({
       fname,
